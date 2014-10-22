@@ -1,2 +1,5 @@
-_buildTAGSTODOsimulator_test.byte
+_build
+TAGS
+TODO
+simulator_test.byte
 

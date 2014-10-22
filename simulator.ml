@@ -53,7 +53,7 @@ let ex_eq eq =
 	 | VBit b1, VBit b2, VBit b3 -> VBit (mux b1 b2 b3)
 	 | VBitArray ar1, VBitArray ar2, VBitArray ar3 -> 
 	    VBitArray (Array.mapi (fun i ar1i -> mux ar1i ar2.(i) ar3.(i)) ar1)
-	 | _ -> raise (Failure ("Incompatible types 2"))
+	 | _ -> raise (Failure ("Incompatible types 2")) 
        end
     | Erom (addr_size, word_size, read_addr) -> assert false
     | Eram (addr_size, word_size, read_addr, write_enable, write_addr, data ) -> assert false
