@@ -58,7 +58,33 @@ let ex_eq eq =
 	 | _ -> raise (Failure ("Incompatible types 2")) 
        end
     | Erom (addr_size, word_size, read_addr) -> assert false
-    | Eram (addr_size, word_size, read_addr, write_enable, write_addr, data ) -> assert false
+    | Eram (_, _, read_addr', write_enable', write_addr', data ) ->
+       (** Check that we want to write (write_enable flag), if yes, add it to the write queue**)
+       let _ =
+	 match read_arg write_enable' with
+	 | VBit true -> (* Only a bool flag, processing *)
+	    (* Unpack data into an array *)
+	    let data_as_array = match read_arg data with
+	      | VBit _ -> raise (Failure "Expecting VBitArray")
+	      | VBitArray  ar ->  ar
+	    in
+	    
+	    (* Convert the write_addr' arg into an int *)
+	    let write_addr = int_of_val (read_arg write_addr') in
+	    
+	    (* Add it to the queue *)
+	    Ram.push write_addr data_as_array
+							
+	 | VBit false -> (* Nothing to do *) ()
+	 | _ -> raise (Failure "Expecting only one bool")
+       in
+       
+       (** Retrieve the return value **)
+       (* Convert the read_addr' arg into an int *)
+       let read_addr = int_of_val (read_arg read_addr') in
+       (* Retrieve the value *)
+       let ret_val = VBitArray (!Ram.ram.(read_addr * !Ram.word_size)) in
+       ret_val
     | Econcat (arg1, arg2) ->
        begin
 	 let v1, v2 = (read_arg arg1), (read_arg arg2) in
@@ -122,6 +148,8 @@ let execute p n =
 	      ) p.p_inputs ;
     (* Move the reg of the previous step into the env *)
     Hashtbl.iter (fun key value -> Hashtbl.replace env key value) reg;
+    (* Process the ram queue *)
+    Ram.process_queue ();
     (* Evaluates the equations *)
     List.iter ex_eq p.p_eqs;
     (* Print out the output *)
