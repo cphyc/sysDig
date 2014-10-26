@@ -18,6 +18,10 @@ let int_of_bool b =
 let int_of_boolarray bool_ar =
   Array.fold_right (fun value computed -> (int_of_bool value) + 2*computed )  bool_ar 0
 
+let int_of_val value = match value with
+  | VBit b -> int_of_bool b
+  | VBitArray bar -> int_of_boolarray bar
+
 let rec string_of_value value = match value with
   | VBit b -> stringint_of_bool b
   | VBitArray ar -> 
