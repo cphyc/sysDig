@@ -11,7 +11,7 @@ let compile filename =
     in
     begin try
         let p = Scheduler.schedule p in
-	print_endline "Simulation the following program:";
+	print_endline "Running program:";
         Netlist_printer.print_program stdout p;
 	print_endline "#################################";
       with
@@ -21,20 +21,17 @@ let compile filename =
     end;
     close_all ();
     if not !print_only then (
-      let n = if !number_steps = -1 then 1 else !number_steps in
-      
+      (* let n = if !number_steps = -1 then -1 else !number_steps in *)
       let p_scheduled = Scheduler.schedule p in
-      let output = Simulator.execute p_scheduled n in
-      List.iter (fun (ident, value) -> 
-		 print_endline
-		   (ident^" = "^(Interaction.string_of_value value))
-		) output
+      Simulator.execute p_scheduled !number_steps
     )
   with
-    | Netlist.Parse_error s -> Format.eprintf "An error accurred: %s@." s; exit 2
+    | Netlist.Parse_error s -> Format.eprintf "An error occurred: %s@." s; exit 2
 
 let main () =
   Arg.parse
+    (* [("-v", Arg.Set verbose, "Enables verbose mode"); *)
+    (*  ("-n", Arg.Int (set_max_files), "Sets maximum number of files to list") *)
     ["-print", Arg.Set print_only, "Only print the result of scheduling";
      "-n", Arg.Set_int number_steps, "Number of steps to simulate"]
     compile
