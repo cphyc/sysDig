@@ -4,7 +4,7 @@ open Scheduler
 
 let env = Hashtbl.create 73;;
 let reg = Hashtbl.create 73;;
-  
+     
 let read_arg arg = match arg with
   | Avar i -> Hashtbl.find env i
   | Aconst vbit -> vbit
@@ -22,9 +22,11 @@ let ex_eq eq =
     match exp with
     | Earg arg -> read_arg arg
     | Ereg i ->  (* do reg[ident] <- env[i] *)
-       Hashtbl.replace reg ident (Hashtbl.find env i);
+       let env_i = Hashtbl.find env i in
+       let env_ident = Hashtbl.find env ident in
+       Hashtbl.replace reg ident (env_i);
        (* return the current value of the ident *)
-       Hashtbl.find env ident
+       env_ident
     | Enot arg -> 
        begin 
 	 match read_arg arg with
@@ -65,11 +67,33 @@ let ex_eq eq =
 	 | VBitArray ar1, VBitArray ar2 -> VBitArray (Array.append ar1 ar2)
 	 | _ -> raise (Failure ("Incompatible types 3"))
        end
-    | Eslice (int1, int2, arg) -> assert false
-    | Eselect (int, arg) -> assert false
+    | Eslice (int1, int2, arg) ->
+       begin
+	 match arg with
+	 | Aconst (VBit b) -> VBit b
+	 | Aconst (VBitArray ar) -> VBitArray (Array.sub ar int1 int2)
+	 | Avar i->
+	    begin
+	      match Hashtbl.find env i with
+	      | VBit b -> VBit b
+	      | VBitArray ar -> VBitArray (Array.sub ar int1 int2)
+	    end
+       end			    
+    | Eselect (int, arg) ->
+       begin
+	 match arg with
+	 | Aconst (VBit b) -> VBit b
+	 | Aconst (VBitArray ar) -> VBit ar.(int)
+	 | Avar i->
+	    begin
+	      match Hashtbl.find env i with
+	      | VBit b -> VBit b
+	      | VBitArray ar -> VBit ar.(int)
+	    end
+       end			    
   in
   let value = ex_exp expression in
-  (* TODO: optimize here to avoir setting ident to its previous value in case
+  (* TODO: optimize here to avoid setting ident to its previous value in case
      of a register *)
   Hashtbl.replace env ident value
 
@@ -81,26 +105,40 @@ let execute p n =
 	      | TBitArray l -> VBitArray (Array.make l false)
 	    in Hashtbl.add env ident vbit ) p.p_vars;
 
-  (* Fill the input variables *)
-  List.iter ( fun ident ->
-	      let n = match (Env.find ident p.p_vars) with 
-		| TBit -> 1 | TBitArray n -> n 
-	      in
-	      let v = ask_value ident n in
-	      Hashtbl.replace env ident v
-	    ) p.p_inputs ;
+  (* Read the program to create the ram *)
+  Ram.create p;
 
-  (* Executes the program *)
-  let _ = 
-    for i = 1 to n do
-      print_endline (string_of_int i);
-      List.iter ex_eq p.p_eqs;
-      (* Move the reg into the env *)
-      Hashtbl.iter (fun key value -> Hashtbl.replace env key value) reg;
-    done
+  (* Executor of the program *)
+  let main_loop i =
+    (* Step number *)
+    print_endline ("Step " ^(string_of_int i));
+    (* Fill the input variables *)
+    List.iter ( fun ident ->
+		let n = match (Env.find ident p.p_vars) with 
+		  | TBit -> 1 | TBitArray n -> n 
+		in
+		let v = ask_value ident n in
+		Hashtbl.replace env ident v
+	      ) p.p_inputs ;
+    (* Move the reg of the previous step into the env *)
+    Hashtbl.iter (fun key value -> Hashtbl.replace env key value) reg;
+    (* Evaluates the equations *)
+    List.iter ex_eq p.p_eqs;
+    (* Print out the output *)
+    List.iter ( fun i_output ->
+		print_endline
+		  ("=> "^i_output^" = "^(print_value (Hashtbl.find env i_output)))
+	      ) p.p_outputs;
   in
-
-  (* Returns the outputs *)
-  List.fold_left (fun list output_ident -> 
-		  (output_ident, Hashtbl.find env output_ident) :: list)
-		 [] p.p_outputs
+  if n >= 0 then
+    for i = 1 to n do
+      main_loop i
+    done
+  else
+    begin
+      let i = ref (1) in
+      while true do
+	main_loop !i;
+	i := !i + 1;
+      done
+    end
