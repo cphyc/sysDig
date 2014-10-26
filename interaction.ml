@@ -11,6 +11,13 @@ let stringint_of_bool b =
   if b then "1"
   else "0"
 
+let int_of_bool b =
+  if b then 1
+  else 0
+	 
+let int_of_boolarray bool_ar =
+  Array.fold_right (fun value computed -> (int_of_bool value) + 2*computed )  bool_ar 0
+
 let rec string_of_value value = match value with
   | VBit b -> stringint_of_bool b
   | VBitArray ar -> 
@@ -48,3 +55,15 @@ let ask_value s nmax =
   else
     VBit (List.hd list)
 
+let print_value v = match v with
+  | VBit b -> stringint_of_bool b
+  | VBitArray ar ->
+     Array.fold_left (fun s v -> s^(stringint_of_bool v)) "" ar
+let dump table =
+  Hashtbl.iter (fun key value -> print_endline (key^":\t"^(print_value value))) table 
+	       
+let check_set r v =
+  if !r = 0 then
+    r := v
+  else
+    assert (!r = v)
