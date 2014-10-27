@@ -23,6 +23,8 @@ let compile filename =
     if not !print_only then (
       (* let n = if !number_steps = -1 then -1 else !number_steps in *)
       let p_scheduled = Scheduler.schedule p in
+      (* Create the rom *)
+      Rom.create filename;
       Simulator.execute p_scheduled !number_steps
     )
   with
