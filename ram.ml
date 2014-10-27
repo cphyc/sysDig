@@ -1,6 +1,8 @@
 open Netlist_ast
+       
 let addr_size = ref (0)
 let word_size = ref (0)
+		    
 let ram = ref (Array.make_matrix 0 0 false)
 let ram_stack = Stack.create ()
 		    
@@ -21,6 +23,7 @@ let push write_addr data =
   Stack.push (write_addr, data) ram_stack
 				       
 let process_queue () =
-  Stack.iter (fun (write_addr, data) -> !ram.(write_addr * !word_size) <- data) ram_stack;
+  Stack.iter (fun (write_addr, data) ->
+	      !ram.(write_addr * !word_size) <- data) ram_stack;
   Stack.clear ram_stack
 	    
