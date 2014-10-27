@@ -1,11 +1,11 @@
 open Netlist_ast
-
+       
 let rec bin_of_int v = 
   let d, r = v/2, v mod 2 in
   if d = 0 then
     [r = 1]
   else
-    (bin_of_int d) @[r = 1]
+    (bin_of_int d) @ [r = 1]
 
 let stringint_of_bool b = 
   if b then "1"
@@ -14,7 +14,11 @@ let stringint_of_bool b =
 let int_of_bool b =
   if b then 1
   else 0
-	 
+
+let boolarray_of_string str =
+  let i = int_of_string ("0b" ^ str) in
+  bin_of_int i
+		   
 let int_of_boolarray bool_ar =
   Array.fold_right (fun value computed -> (int_of_bool value) + 2*computed )  bool_ar 0
 
@@ -42,14 +46,9 @@ let ask_value s nmax =
       
       let v = read_line () in
       try  
-	let input =
-	  if v = "1" then true
-	  else if v = "0" then false
-	  else (bool_of_string v)
-	in
-	input :: (inner s (n-1))
+	boolarray_of_string v
       with _ -> 
-	print_string "Invalid value, true/false expected. ";
+	print_string "Invalid value, O/1 list expected. ";
 	inner s n 
     )
   in
@@ -63,6 +62,7 @@ let print_value v = match v with
   | VBit b -> stringint_of_bool b
   | VBitArray ar ->
      Array.fold_left (fun s v -> s^(stringint_of_bool v)) "" ar
+		     
 let dump table =
   Hashtbl.iter (fun key value -> print_endline (key^":\t"^(print_value value))) table 
 	       
