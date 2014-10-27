@@ -15,9 +15,18 @@ let int_of_bool b =
   if b then 1
   else 0
 
-let boolarray_of_string str =
+let boolarray_of_string str size =
   let i = int_of_string ("0b" ^ str) in
-  bin_of_int i
+  let arr = bin_of_int i in
+  let l = List.length arr in
+  if l = size then
+    Array.of_list arr
+  else if l < size then (
+    print_endline "Here";
+    Array.append (Array.make (size-l) false) (Array.of_list arr))
+  else(
+    print_endline "There";
+    Array.sub (Array.of_list arr) 0 size )
 		   
 let int_of_boolarray bool_ar =
   Array.fold_right (fun value computed -> (int_of_bool value) + 2*computed )  bool_ar 0
@@ -31,32 +40,37 @@ let rec string_of_value value = match value with
   | VBitArray ar -> 
      Array.fold_left (fun string bool -> string ^ (stringint_of_bool bool)) "" ar
 
-let ask_value s nmax =
-  let message n = (
-    if nmax = 1 then
+let ask_value s n =
+  let message = (
+    if n = 1 then
       ""
     else
-      "["^(string_of_int (nmax - n))^"]"
+      "["^(string_of_int (n))^"]"
   ) in
   
-  let rec inner s n = 
-    if n = 0 then []
+  let rec inner s = 
+    if n = 0 then Array.make 0 false
     else (
-      print_string (s^(message n)^"? ");
-      
+      print_string (s^(message)^"? ");
       let v = read_line () in
-      try  
-	boolarray_of_string v
-      with _ -> 
-	print_string "Invalid value, O/1 list expected. ";
-	inner s n 
+      try
+	if String.length v != n then (
+	  raise (Failure ("String too short"))
+	)
+	else
+	  boolarray_of_string v n
+      with Failure "String too short" | Failure "int_of_string"-> 
+      	print_string "Invalid value, O/1 list expected. ";
+      	inner s
+	   | _ -> raise (Failure "Unknown error!")
+
     )
   in
-  let list = inner s nmax in
-  if (List.length list > 1) then
-    VBitArray (Array.of_list list)
+  let list = inner s in
+  if (Array.length list > 1) then
+    VBitArray list
   else
-    VBit (List.hd list)
+    VBit list.(0)
 
 let print_value v = match v with
   | VBit b -> stringint_of_bool b
