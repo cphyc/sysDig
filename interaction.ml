@@ -1,11 +1,11 @@
 open Netlist_ast
        
-let rec bin_of_int v = 
+let rec bin_of_intasbin v = 
   let d, r = v/2, v mod 2 in
   if d = 0 then
     [r = 1]
   else
-    (bin_of_int d) @ [r = 1]
+    (bin_of_intasbin d) @ [r = 1]
 
 let stringint_of_bool b = 
   if b then "1"
@@ -15,21 +15,37 @@ let int_of_bool b =
   if b then 1
   else 0
 
+let bool_of_int i =
+  let rec aux n =
+    let b =
+      match n mod 10 with
+      | 0 -> false
+      | 1 -> true
+      | i -> Format.eprintf "Unexpected: %d@." i; raise Parsing.Parse_error
+    in
+    if n < 10 then
+      [b]
+    else
+      b::(aux (n / 10))
+  in
+  match aux i with
+  | [] -> Format.eprintf "Empty list@."; raise Parsing.Parse_error
+  | b -> Array.of_list b
+			  
 let boolarray_of_string str size =
-  let i = int_of_string ("0b" ^ str) in
-  let arr = bin_of_int i in
-  let l = List.length arr in
+  let i = int_of_string str in
+  let arr = bool_of_int i in
+  let l = Array.length arr in
   if l = size then
-    Array.of_list arr
+    arr
   else if l < size then (
-    print_endline "Here";
-    Array.append (Array.make (size-l) false) (Array.of_list arr))
+    Array.append (Array.make (size-l) false) arr)
   else(
-    print_endline "There";
-    Array.sub (Array.of_list arr) 0 size )
+    Array.sub arr 0 size )
 		   
 let int_of_boolarray bool_ar =
-  Array.fold_right (fun value computed -> (int_of_bool value) + 2*computed )  bool_ar 0
+  Array.fold_right (fun value computed ->
+		    (int_of_bool value) + 2*computed )  bool_ar 0
 
 let int_of_val value = match value with
   | VBit b -> int_of_bool b
