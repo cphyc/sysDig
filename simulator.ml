@@ -57,7 +57,9 @@ let ex_eq eq =
 	    VBitArray (Array.mapi (fun i ar1i -> mux ar1i ar2.(i) ar3.(i)) ar1)
 	 | _ -> raise (Failure ("Incompatible types 2")) 
        end
-    | Erom (addr_size, word_size, read_addr) -> assert false
+    | Erom (_, _, read_addr') ->
+       let read_addr = int_of_val (read_arg read_addr') in
+       VBitArray (Array.sub !Rom_comm.rom read_addr (read_addr + !Rom_comm.word_size))
     | Eram (_, _, read_addr', write_enable', write_addr', data ) ->
        (** Check that we want to write (write_enable flag), if yes, add it to the write queue**)
        let _ =
