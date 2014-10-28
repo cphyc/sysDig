@@ -23,7 +23,7 @@ let push write_addr data =
   Stack.push (write_addr, data) ram_stack
 				       
 let process_queue () =
-  Stack.iter (fun (write_addr, data) ->
-	      !ram.(write_addr * !word_size) <- data) ram_stack;
+  Stack.iter (fun (write_addr, data) -> 
+	      !ram.(write_addr) <- data) ram_stack;
   Stack.clear ram_stack
 	    
