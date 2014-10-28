@@ -1,0 +1,6 @@
+(* -*- mode: tuareg; -*- *)
+(* #use "topfind" ;;*)
+(* require all dependencies *)
+#directory "_build/" ;;
+(* load all local packages *)
+#load "simulator_test.cma" ;;
