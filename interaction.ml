@@ -26,7 +26,7 @@ let bool_of_int i =
     if n < 10 then
       [b]
     else
-      b::(aux (n / 10))
+      (aux (n / 10)) @ [b]
   in
   match aux i with
   | [] -> Format.eprintf "Empty list@."; raise Parsing.Parse_error
@@ -38,14 +38,14 @@ let boolarray_of_string str size =
   let l = Array.length arr in
   if l = size then
     arr
-  else if l < size then (
-    Array.append (Array.make (size-l) false) arr)
-  else(
-    Array.sub arr 0 size )
+  else if l < size then
+    Array.append (Array.make (size-l) false) arr
+  else
+    Array.sub arr 0 size
 		   
 let int_of_boolarray bool_ar =
-  Array.fold_right (fun value computed ->
-		    (int_of_bool value) + 2*computed )  bool_ar 0
+  Array.fold_left (fun computed value ->
+		   (int_of_bool value) + 2*computed ) 0 bool_ar
 
 let int_of_val value = match value with
   | VBit b -> int_of_bool b
