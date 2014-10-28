@@ -7,3 +7,7 @@ simulator_test.byte
 */test.net
 *byte
 tags
+
+_tags
+simulator_test.native
+fulladder.rom
