@@ -59,7 +59,8 @@ let ex_eq eq =
        end
     | Erom (_, _, read_addr') ->
        let read_addr = int_of_val (read_arg read_addr') in
-       VBitArray (Array.sub !Rom_comm.rom read_addr (read_addr + !Rom_comm.word_size))
+       print_endline ("Access to ROM between "^(string_of_int read_addr));
+       VBitArray (!Rom_comm.rom.(read_addr))
     | Eram (_, _, read_addr', write_enable', write_addr', data ) ->
        (** Check that we want to write (write_enable flag), if yes, add it to the write queue**)
        let _ =
@@ -85,7 +86,10 @@ let ex_eq eq =
        (* Convert the read_addr' arg into an int *)
        let read_addr = int_of_val (read_arg read_addr') in
        (* Retrieve the value *)
-       let ret_val = VBitArray (!Ram.ram.(read_addr * !Ram.word_size)) in
+       let ret_val = try
+	   VBitArray (!Ram.ram.(read_addr))
+	 with _ -> raise (Failure (string_of_int (read_addr)))
+       in
        ret_val
     | Econcat (arg1, arg2) ->
        begin
@@ -93,7 +97,9 @@ let ex_eq eq =
 	 match v1, v2 with
 	 | VBit b1, VBit b2 -> VBitArray (Array.of_list (b1 :: [b2]))
 	 | VBitArray ar1, VBitArray ar2 -> VBitArray (Array.append ar1 ar2)
-	 | _ -> raise (Failure ("Incompatible types 3"))
+	 | VBit b, VBitArray ar -> VBitArray (Array.append (Array.make 1 b) ar)
+	 | VBitArray ar, VBit b  -> VBitArray (Array.append ar (Array.make 1 b))
+	    
        end
     | Eslice (int1, int2, arg) ->
        begin
@@ -139,7 +145,7 @@ let execute p n =
   (* Executor of the program *)
   let main_loop i =
     (* Step number *)
-    print_endline ("Step " ^(string_of_int i));
+    print_endline ("My step " ^(string_of_int i));
     (* Fill the input variables *)
     List.iter ( fun ident ->
 		let n = match (Env.find ident p.p_vars) with 
