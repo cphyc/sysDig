@@ -32,12 +32,10 @@ let compile filename =
 
 let main () =
   Arg.parse
-    (* [("-v", Arg.Set verbose, "Enables verbose mode"); *)
-    (*  ("-n", Arg.Int (set_max_files), "Sets maximum number of files to list") *)
     ["-print", Arg.Set print_only, "Only print the result of scheduling";
      "-n", Arg.Set_int number_steps, "Number of steps to simulate"]
     compile
     ""
 ;;
 
-main ()
+let () = if not !Sys.interactive then main ()
