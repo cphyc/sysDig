@@ -5,15 +5,11 @@
   exception Eof
 	      
   let make_rom () =
-    rom := Array.make !addr_size false
+    rom := Array.make (1 lsl !addr_size) (Array.make 1 false)
 			   
   let save address value =
     (* Copy value from 0 to !word_size into !rom at position address *)
-    print_string "from "; print_string (string_of_int address);
-    print_string " to "; print_string (string_of_int !word_size); print_string ": ";
-    print_endline (string_of_int (Interaction.int_of_boolarray value));
-    Array.blit value 0 !rom address !word_size
-
+    !rom.(address) <- value
 
  let value_of_int n =
    let rec aux n =
@@ -52,7 +48,7 @@ rule token = parse
     let value_as_bool_array = Interaction.boolarray_of_string value !word_size in
     (* Add it *)
     save (address_as_int) (value_as_bool_array);
-    print_endline ("Added value "^value^" at address " ^ (string_of_int address_as_int));
+
     token lexbuf
   }
 | eol { Lexing.new_line lexbuf; token lexbuf }
