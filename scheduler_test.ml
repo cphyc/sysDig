@@ -28,7 +28,7 @@ let compile filename =
       ignore (Unix.system (simulator^" "^out_name))
     )
   with
-    | Netlist.Parse_error s -> Format.eprintf "An error accurred: %s@." s; exit 2
+    | Netlist.Parse_error s -> Format.eprintf "An error occurred: %s@." s; exit 2
 
 let main () =
   Arg.parse
