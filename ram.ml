@@ -15,8 +15,6 @@ let create p =
 	   | _, _ -> ()
   in
   List.iter iter p.p_eqs;
-  print_endline
-    ("Creating RAM of size "^(string_of_int (1 lsl !addr_size))^"*"^(string_of_int !word_size));
   ram := Array.make_matrix (1 lsl !addr_size) !word_size false
 
 let push write_addr data =
