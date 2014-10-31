@@ -2,8 +2,8 @@ OCBFLAGS := -classic-display -use-menhir -j 0
 OCB := ocamlbuild $(OCBFLAGS)
 
 .PHONY: all debug clean top
-all: simulator_test.cma simulator_test.cmxa simulator_test.native
-debug: all simulator_test.cma
+all: main.native
+debug: all main.cma
 
 %.cma:
 	$(OCB) $@

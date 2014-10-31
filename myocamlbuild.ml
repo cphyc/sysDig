@@ -1,7 +1,7 @@
 open Ocamlbuild_plugin ;;
 
 (* set the version number of the software in the plugin *)
-let project = "simulator_test"
+let project = "main"
 let major = 0
 let minor = 1
 let patch = 0                           (* patch level *)
