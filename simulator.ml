@@ -59,7 +59,6 @@ let ex_eq eq =
        end
     | Erom (_, _, read_addr') ->
        let read_addr = int_of_val (read_arg read_addr') in
-       print_endline ("Access to ROM between "^(string_of_int read_addr));
        VBitArray (!Rom_comm.rom.(read_addr))
     | Eram (_, _, read_addr', write_enable', write_addr', data ) ->
        (** Check that we want to write (write_enable flag), if yes, add it to the write queue**)
@@ -145,7 +144,7 @@ let execute p n =
   (* Executor of the program *)
   let main_loop i =
     (* Step number *)
-    print_endline ("My step " ^(string_of_int i));
+    print_endline ("Step " ^(string_of_int i));
     (* Fill the input variables *)
     List.iter ( fun ident ->
 		let n = match (Env.find ident p.p_vars) with 
