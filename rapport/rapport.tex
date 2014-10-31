@@ -1,0 +1,132 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[frenchb]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage[usenames, dvipsnames]{color}
+
+\title{Simulateur de netlist}
+\author{Corentin Cadiou}
+\newcommand{\code}[1]{\colorbox{JungleGreen}{\texttt{#1}}}
+
+
+\begin{document}
+  \maketitle
+\section{Simulateur}
+\label{sec:simulateur}
+
+Le simulateur de netlist a été écrit en OCaml. Ses sources sont entre
+autre disponibles sur Github
+(\url{https://github.com/cphyc/sysDig/}). Le rôle de chacun des
+fichiers source se trouve dans le tableau \ref{tab:1}.
+\begin{table}
+  \noindent\begin{tabular}{|l|p{0.9\textwidth}|}
+    \hline
+    \textbf{Fichier source} & \textbf{Utilisation} \\
+    \hline
+    graph.ml & utlitaire pour gérer les graphes\\
+    interaction.ml & module permettant l'interaction entre l'utilisateur et le programme \\
+    myocamlbuild.ml & configuration de ocamlbuild \\
+    netlist.ml & ouverture de la netlist avec gestion des erreurs \\
+    netlist\_ast.ml & syntaxe abstraite de la netlist \\
+    netlist\_lexer.mll & analyseur lexical de netlist \\
+    netlist\_parser.mly & parseur de netlist \\
+    netlist\_printer.ml & fonctions pour afficher le contenu d'une
+    netlist \\
+    ram.ml & module pour gérer la RAM \\
+    rom.ml & module pour gérer la ROM \\
+    rom\_comm.ml & interface de communication entre rom.ml et le reste du
+    programme \\
+    rom\_lexer.mll & analyseur lexical de fichier de ROM, se référer a la
+    section \ref{sec:rom} \\
+    scheduler.ml & ordonnanceur de netlist utilisant un tri topologique
+    sur l'arbre de dépendance des équations \\
+    simulator.ml & interprète la netlist \\
+    main.ml & fichier principal qui ordonnance puis exécute la netlist\\
+    \hline
+  \end{tabular}
+  \caption{\label{tab:1}Contenu des fichiers sources}
+\end{table}
+
+\section{Compilation}
+Pour compiler, il suffit de se placer dans le dossier où se trouvent
+les sources et de lancer la commande \code{make}.
+
+\section{Environnement}
+\label{sec:environnement}
+
+L'environnement est représenté par une table de hashage dont les clés
+sont les identifiants des variables et les valeurs sont de type
+\texttt{bool array VBitArray} ou \texttt{bool VBit}. Le choix de la
+table de hashage a été effectuée pour obtenir un temps (amorti) de
+lecture, d'écriture, de recherche, de suppression en $O(1)$. Des tests avec une
+map ont été effectués, celle-ci se trouve être plus lente dans le cas
+général. 
+
+
+\section{RAM}
+\label{sec:ram}
+
+\subsection{Représentation et initialisation}
+La ROM est représentée en mémoire par un \code{bool array array ref}
+Ocaml de longueur $2^\texttt{RAM add. size}$. La constante \texttt{RAM
+add. size} est déterminée par la fonction \code{val create :
+Netlist\_ast.program -> unit} qui effectue une pré-lecture de la
+netlist. Cette lecture ignore toutes les équations sauf celles
+contenant une instruction \code{RAM <address size> <word size>}. La
+fonction initialise alors le tableau représentant la RAM de longueur
+$2^\texttt{RAM add. size}$, chaque case faisant \texttt{RAM word
+  size} de long.
+
+\subsection{Accès à la RAM}
+Les lectures de la RAM sont réalisées de manière immédiate tandis que
+les écritures sont faites en fin de cycle. Pour chaque instruction
+d'écriture dans la RAM, il faut donc ``s'en rappeler'' et l'éxécuter
+en fin de cycle. Pour des soucis de performance, j'ai choisi de
+stocker les écritures demandées dans la RAM dans une pile de type
+\code{(int*bool array) Stack.t} qui stocke des données sous forme de
+tableau de booléens ainsi que l'adresse d'écriture. 
+
+En fin de cycle, une itération est faite sur la pile puis la pile est vidée.
+
+\section{Registre}
+\label{sec:registre}
+
+Les registres sont eux aussi ajoutés à une pile (pour ce cas précis,
+une pile est $30\%$ plus rapide qu'une table de hashage) au fur et à
+mesure qu'ils sont rencontrés dans la netlist. En fin de cycle, une
+itération est effectuée sur la pile puis celle-ci est vidée.
+
+\section{ROM}
+\label{sec:rom}
+
+La ROM est représentée en mémoire par un \code{bool array array ref}
+Ocaml de longueur $2^\texttt{ROM add. size}$. Elle est
+chargée automatiquement à partir du fichier \code{.rom} correspondant
+au fichier \code{.net} chargé (\texttt{ma\_netlist.net} charge automatiquement
+\texttt{ma\_netlist.rom} quand ce fichier existe). Le fichier
+\code{.rom} doit suivre la syntaxe suivante :
+\begin{verbatim}
+ADDRESS SIZE   <adress size>
+WORD SIZE      <word size>
+
+<address 1> <value 1>
+…
+<address n> <value n>
+\end{verbatim}
+Les éléments entourés par des chevrons sont des valeurs en
+binaire respectant l'expression régulière suivante \code{['0' '1']+}. Les espaces et les tabulations n'ont pas de valeur
+syntaxique. Chaque paire addresse-valeur doit être séparée par au
+moins un saut de ligne.
+
+L'analyse du fichier \code{.rom} est effectuée par un lexer
+(\texttt{rom\_lexer.ml}) qui initialise le tableau représentant la rom
+dans la mémoire et le rempli au fur et à mesure de la lecture du
+fichier décrivant la ROM.
+
+L'accès à la ROM se fait en consultant la bonne case du tableau
+directement, c'est-à-dire en temps constant.
+
+
+\end{document}
