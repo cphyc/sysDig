@@ -9,30 +9,37 @@ let compile filename =
     let close_all () =
       close_out out
     in
-    begin try
-        let p = Scheduler.schedule p in
-	print_endline "Running program:";
-        Netlist_printer.print_program stdout p;
-	print_endline "#################################";
+    let p = try
+        Scheduler.schedule p 
       with
-        | Scheduler.Combinational_cycle ->
-            Format.eprintf "The netlist has a combinatory cycle.@.";
-            close_all (); exit 2
-    end;
+      | Scheduler.Combinational_cycle ->
+         Format.eprintf "The netlist has a combinatory cycle.@.";
+         close_all ();
+	 exit 2
+      | Netlist.Parse_error s ->
+	 Format.eprintf "An error occurred: %s@." s;
+	 close_all ();
+	 exit 2
+    in
     close_all ();
-    if not !print_only then (
-      (* let n = if !number_steps = -1 then -1 else !number_steps in *)
-      let p_scheduled = Scheduler.schedule p in
-      (* Create the rom *)
-      Rom.create filename;
-      Simulator.execute p_scheduled !number_steps
+    
+    (
+      if not !print_only then (
+	let p_scheduled = Scheduler.schedule p in
+	(* Create the rom *)
+	Rom.create filename;
+	(* Execute the program *)
+	Simulator.execute p_scheduled !number_steps;
+      )
+      else (
+	Netlist_printer.print_program stdout p;
+      )
     )
-  with
-    | Netlist.Parse_error s -> Format.eprintf "An error occurred: %s@." s; exit 2
-
+    
+    
 let main () =
   Arg.parse
-    ["-print", Arg.Set print_only, "Only print the result of scheduling";
+    ["-v", Arg.Set print_only, "Only print the result of scheduling";
      "-n", Arg.Set_int number_steps, "Number of steps to simulate"]
     compile
     ""
