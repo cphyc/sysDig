@@ -3,7 +3,7 @@ open Netlist_ast
 open Scheduler 
 
 let env = Hashtbl.create 73;;
-let reg = Hashtbl.create 73;;
+let reg = Stack.create ();;
      
 let read_arg arg = match arg with
   | Avar i -> Hashtbl.find env i
@@ -24,7 +24,8 @@ let ex_eq eq =
     | Ereg i ->  (* do reg[ident] <- env[i] *)
        let env_i = Hashtbl.find env i in
        let env_ident = Hashtbl.find env ident in
-       Hashtbl.replace reg ident (env_i);
+       Stack.push (ident, env_i) reg;
+       (* Hashtbl.replace reg ident (env_i); *)
        (* return the current value of the ident *)
        env_ident
     | Enot arg -> 
@@ -154,7 +155,10 @@ let execute p n =
 		Hashtbl.replace env ident v
 	      ) p.p_inputs ;
     (* Move the reg of the previous step into the env *)
-    Hashtbl.iter (fun key value -> Hashtbl.replace env key value) reg;
+    Stack.iter (fun (key, value) -> Hashtbl.replace env key value) reg;
+    (* Delete the stack *)
+    Stack.clear reg;
+    
     (* Process the ram queue *)
     Ram.process_queue ();
     (* Evaluates the equations *)
