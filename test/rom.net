@@ -1,0 +1,10 @@
+INPUT 
+OUTPUT a,b,c,d
+VAR
+  a,b,c,d
+IN
+a = ROM 2 2 00
+b = ROM 2 2 01
+c = ROM 2 2 10
+d = ROM 2 2 11
+
