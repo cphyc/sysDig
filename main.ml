@@ -16,8 +16,8 @@ let compile filename =
       (* Also print it to stdout *)
       Netlist_printer.print_program stdout p
     else
-      (* Else run it *)
-      let p_scheduled = Scheduler.schedule p in
+      (* (\* Else run it *\) *)
+      (* let p_scheduled = Scheduler.schedule p in *)
       
       (* Create the rom *)
       Rom.create filename;
