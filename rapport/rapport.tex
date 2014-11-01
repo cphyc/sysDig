@@ -8,12 +8,13 @@
 
 \title{Simulateur de netlist}
 \author{Corentin Cadiou}
-\newcommand{\code}[1]{\colorbox{JungleGreen}{\texttt{#1}}}
+\newcommand{\code}[1]{\colorbox{White}{\texttt{#1}}}
 
 
 \begin{document}
   \maketitle
-\section{Simulateur}
+\section{Information diverses}
+\subsection{Simulateur}
 \label{sec:simulateur}
 
 Le simulateur de netlist a été écrit en OCaml. Ses sources sont entre
@@ -49,27 +50,56 @@ fichiers source se trouve dans le tableau \ref{tab:1}.
   \caption{\label{tab:1}Contenu des fichiers sources}
 \end{table}
 
-\section{Compilation}
+\subsection{Compilation}
 Pour compiler, il suffit de se placer dans le dossier où se trouvent
 les sources et de lancer la commande \code{make}.
 
-\section{Environnement}
+\section{Structure du programme}
+Le programme s'exécute de la manière suivante (simplifiée) :
+\begin{enumerate}
+  \item ouverture du fichier de netlist ;
+  \item analyse lexical puis syntaxique du fichier ;
+  \item ordonnancement des équations selon un \emph{tri topologique} ;
+  \item affichage de l'ordonnancement du programme et fin du
+    simulateur si l'option \texttt{-v} a été cochée, sinon continue ;
+  \item mise en place de la ROM
+    \begin{enumerate}
+    \item ouverture du fichier de ROM ;
+    \item analyse lexicale du fichier qui crée un tableau réprésentant
+      la ROM (voir \ref{sec:rom}) ;
+    \end{enumerate}
+  \item initialisation de la RAM (voir \ref{sec:ram}) et de
+    l'environnement (voir \ref{sec:environnement});
+  \item exécution du programme \texttt{n} fois avec $\texttt{n} = 1$ par
+    défaut et peut être modifié \emph{via} l'option \texttt{-n
+      <valeur>}. Pour chaque itération, les opérations suivantes
+    s'exécutent :
+    \begin{enumerate}
+      \item lecture des variables d'entrées depuis \texttt{stdin} et
+        stockage dans la table de hashage \texttt{env} ;
+      \item évaluation des équations \label{evaluation};
+      \item affichage des variables de sortie ;
+      \item mise à jour de l'environnement pour les variables de type
+        registre et pour la RAM \label{eoc};
+    \end{enumerate}
+\end{enumerate}
+\subsection{Environnement}
 \label{sec:environnement}
 
 L'environnement est représenté par une table de hashage dont les clés
 sont les identifiants des variables et les valeurs sont de type
-\texttt{bool array VBitArray} ou \texttt{bool VBit}. Le choix de la
-table de hashage a été effectuée pour obtenir un temps (amorti) de
-lecture, d'écriture, de recherche, de suppression en $O(1)$. Des tests avec une
-map ont été effectués, celle-ci se trouve être plus lente dans le cas
-général. 
+\texttt{value = VBitArray of bool array | VBit of bool}. Le choix de la
+table de hashage a été effectué pour obtenir un temps (amorti)
+d'écriture, de recherche et de suppression en $\mathcal{O}(1)$. Des
+tests avec une map ont été effectués, celle-ci se trouve être plus
+lente dans le cas général. 
 
 
-\section{RAM}
+\subsection{RAM}
 \label{sec:ram}
 
-\subsection{Représentation et initialisation}
-La ROM est représentée en mémoire par un \code{bool array array ref}
+\subsubsection{Représentation et initialisation}
+La RAM est représentée en mémoire par un \code{bool array array ref}
 Ocaml de longueur $2^\texttt{RAM add. size}$. La constante \texttt{RAM
 add. size} est déterminée par la fonction \code{val create :
 Netlist\_ast.program -> unit} qui effectue une pré-lecture de la
@@ -79,9 +109,9 @@ fonction initialise alors le tableau représentant la RAM de longueur
 $2^\texttt{RAM add. size}$, chaque case faisant \texttt{RAM word
   size} de long.
 
-\subsection{Accès à la RAM}
-Les lectures de la RAM sont réalisées de manière immédiate tandis que
-les écritures sont faites en fin de cycle. Pour chaque instruction
+\subsubsection{Accès à la RAM}
+Les lectures de la RAM sont réalisées de manière immédiate (point \ref{evaluation})tandis que
+les écritures sont faites en fin de cycle (point \ref{eoc}). Pour chaque instruction
 d'écriture dans la RAM, il faut donc ``s'en rappeler'' et l'éxécuter
 en fin de cycle. Pour des soucis de performance, j'ai choisi de
 stocker les écritures demandées dans la RAM dans une pile de type
@@ -90,7 +120,7 @@ tableau de booléens ainsi que l'adresse d'écriture.
 
 En fin de cycle, une itération est faite sur la pile puis la pile est vidée.
 
-\section{Registre}
+\subsection{Registre}
 \label{sec:registre}
 
 Les registres sont eux aussi ajoutés à une pile (pour ce cas précis,
@@ -98,7 +128,7 @@ une pile est $30\%$ plus rapide qu'une table de hashage) au fur et à
 mesure qu'ils sont rencontrés dans la netlist. En fin de cycle, une
 itération est effectuée sur la pile puis celle-ci est vidée.
 
-\section{ROM}
+\subsection{ROM}
 \label{sec:rom}
 
 La ROM est représentée en mémoire par un \code{bool array array ref}
@@ -128,5 +158,15 @@ fichier décrivant la ROM.
 L'accès à la ROM se fait en consultant la bonne case du tableau
 directement, c'est-à-dire en temps constant.
 
+\section{Difficultés rencontrées}
+
+Lors de l'écriture du simulateur, la plus grosse difficulté a été de
+créer des fonctions permettant de convertir les valeurs d'entrées
+(\texttt{stdin} et \texttt{ROM}) en \texttt{bool array}.
+
+C'est parce que la gestion de \texttt{string} en OCaml n'est pas
+forcément évidente que le choix d'un analyseur lexical a été fait pour
+lire la ROM. Cet analyseur a l'avantage d'avoir une syntaxe très
+claire et d'être concis et facile à écrire.
 
 \end{document}
