@@ -23,7 +23,7 @@ let compile filename =
       Rom.create filename;
 
       (* Execute it *)
-      Simulator.execute p_scheduled !number_steps
+      Simulator.execute p !number_steps
       
   with
   | Scheduler.Combinational_cycle ->
