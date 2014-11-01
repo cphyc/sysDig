@@ -154,13 +154,6 @@ let execute p n =
 		let v = ask_value ident n in
 		Hashtbl.replace env ident v
 	      ) p.p_inputs ;
-    (* Move the reg of the previous step into the env *)
-    Stack.iter (fun (key, value) -> Hashtbl.replace env key value) reg;
-    (* Delete the stack *)
-    Stack.clear reg;
-    
-    (* Process the ram queue *)
-    Ram.process_queue ();
     (* Evaluates the equations *)
     List.iter ex_eq p.p_eqs;
     (* Print out the output *)
@@ -168,6 +161,15 @@ let execute p n =
 		print_endline
 		  ("=> "^i_output^" = "^(print_value (Hashtbl.find env i_output)))
 	      ) p.p_outputs;
+
+    (* Move the reg of the previous step into the env *)
+    Stack.iter (fun (key, value) -> Hashtbl.replace env key value) reg;
+    (* Delete the stack *)
+    Stack.clear reg;
+    
+    (* Process the ram queue *)
+    Ram.process_queue ();
+
   in
   if n >= 0 then
     for i = 1 to n do
