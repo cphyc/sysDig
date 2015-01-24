@@ -1,5 +1,5 @@
 OCBFLAGS := -classic-display -use-menhir -j 0
-OCB := ocamlbuild $(OCBFLAGS)
+OCB := ocamlbuild $(OCBFLAGS) -libs unix
 
 .PHONY: all debug clean top
 all: main.native
