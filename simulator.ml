@@ -105,12 +105,14 @@ let ex_eq eq =
        begin
 	 match arg with
 	 | Aconst (VBit b) -> VBit b
-	 | Aconst (VBitArray ar) -> VBitArray (Array.sub ar int1 int2)
+	 | Aconst (VBitArray ar) ->
+	    VBitArray (Array.sub ar int1 (int2-int1+1))
 	 | Avar i->
 	    begin
 	      match Hashtbl.find env i with
 	      | VBit b -> VBit b
-	      | VBitArray ar -> VBitArray (Array.sub ar int1 int2)
+	      | VBitArray ar ->
+		 VBitArray (Array.sub ar int1 (int2-int1+1))
 	    end
        end			    
     | Eselect (int, arg) ->
