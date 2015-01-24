@@ -16,8 +16,8 @@ let compile filename =
       (* Also print it to stdout *)
       Netlist_printer.print_program stdout p
     else
-      (* (\* Else run it *\) *)
-      (* let p_scheduled = Scheduler.schedule p in *)
+      (* Else run it *)
+      let p_scheduled = Scheduler.schedule p in
       
       (* Create the rom *)
       Rom.create filename;
@@ -32,9 +32,9 @@ let compile filename =
   | Netlist.Parse_error s ->
      Format.eprintf "An error occurred: %s@." s;
      exit 2
-  | _ ->
-     Format.eprintf "Unknown error";
-     exit 2
+  (* | _ -> *)
+  (*    Format.eprintf "Unknown error"; *)
+  (*    exit 2 *)
 
 
 let main () =
