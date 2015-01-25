@@ -15,7 +15,19 @@ let create p =
 	   | _, _ -> ()
   in
   List.iter iter p.p_eqs;
-  ram := Array.make_matrix (1 lsl !addr_size) !word_size false
+  let addr_array_size =
+    if 1 lsl !addr_size < 10 then
+      16
+    else
+      1 lsl !addr_size
+  in
+  let word_array_size =
+    if !word_size == 0 then
+      8
+    else
+      !word_size
+  in
+  ram := Array.make_matrix addr_array_size word_array_size false
 
 let push write_addr data =
   Stack.push (write_addr, data) ram_stack
