@@ -3,21 +3,27 @@ let number_steps = ref (-1)
 
 let compile filename =
   try
-    let p = Netlist.read_file filename in
+    let p_unscheduled = Netlist.read_file filename in
     let out_name = (Filename.chop_suffix filename ".net") ^ "_sch.net" in
-    let out = open_out out_name in
-    
-    (* Schedule the program *)
-    let p = Scheduler.schedule p  in
-    (* Write the output to the _sch.net file*)
-    Netlist_printer.print_program out p;
+    let p =
+      (if not (Sys.file_exists out_name) then
+	let out = open_out out_name in
+	
+	(* Schedule the program *)
+	let p = Scheduler.schedule p_unscheduled  in
+	(* Write the output to the _sch.net file*)
+	Netlist_printer.print_program out p;
+	p
+      else
+	p_unscheduled
+      )
+    in
     
     if  !print_only then
       (* Also print it to stdout *)
       Netlist_printer.print_program stdout p
     else
       (* Else run it *)
-      let p_scheduled = Scheduler.schedule p in
       
       (* Create the rom *)
       Rom.create filename;
