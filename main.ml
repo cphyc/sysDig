@@ -6,16 +6,18 @@ let compile filename =
     let p_unscheduled = Netlist.read_file filename in
     let out_name = (Filename.chop_suffix filename ".net") ^ "_sch.net" in
     let p =
-      (if not (Sys.file_exists out_name) then
-	let out = open_out out_name in
-	
-	(* Schedule the program *)
-	let p = Scheduler.schedule p_unscheduled  in
-	(* Write the output to the _sch.net file*)
-	Netlist_printer.print_program out p;
-	p
-      else
-	p_unscheduled
+      (if not (Sys.file_exists out_name) then(
+	 print_endline "Rescheduling";
+	 let out = open_out out_name in
+	     
+	 (* Schedule the program *)
+	 let p = Scheduler.schedule p_unscheduled  in
+	 (* Write the output to the _sch.net file*)
+	 Netlist_printer.print_program out p;
+	 p
+       )
+       else
+	 p_unscheduled
       )
     in
     
@@ -23,8 +25,6 @@ let compile filename =
       (* Also print it to stdout *)
       Netlist_printer.print_program stdout p
     else
-      (* Else run it *)
-      
       (* Create the rom *)
       Rom.create filename;
 

@@ -4,7 +4,9 @@ open Scheduler
 
 let env = Hashtbl.create 73;;
 let reg = Stack.create ();;
-     
+Unix.mkfifo "input_fifo";;
+Unix.mkfifo "output_fifo";;
+  
 let read_arg arg = match arg with
   | Avar i -> Hashtbl.find env i
   | Aconst vbit -> vbit
@@ -144,10 +146,39 @@ let execute p n =
   (* Read the program to create the ram *)
   Ram.create p;
 
+  (* (\* Open FIFOs *\) *)
+  (* let fifo_in = open_in "input_fifo" in *)
+  (* let fifo_out = open_out "output_fifo" in *)
+  
+  (* Time *)
+
+  let init_t = Unix.localtime (Unix.time ()) in
+  let init_hour = init_t.tm_hour in
+  let init_min = init_t.tm_min in
+  let init_sec = init_t.tm_sec in
+
+  !Ram.ram.(0x02) <- boolarray_of_int init_sec 8;
+  !Ram.ram.(0x03) <- boolarray_of_int init_min 8 ;
+  !Ram.ram.(0x04) <- boolarray_of_int init_hour 8 ;
+
+  let t = ref (int_of_float (Unix.time ()))in
+  
   (* Executor of the program *)
   let main_loop i =
     (* Step number *)
     print_endline ("Step " ^(string_of_int i));
+
+    let new_t = int_of_float (Unix.time ()) in
+    let tic =
+      if new_t - !t >= 1 then
+	1
+      else
+	0
+    in
+    
+    (* Push it on position 2 of Ram *)
+    Ram.push 0x05 (boolarray_of_int tic 8);
+    
     (* Fill the input variables *)
     List.iter ( fun ident ->
 		let n = match (Env.find ident p.p_vars) with 
@@ -174,14 +205,16 @@ let execute p n =
 
   in
   if n >= 0 then
-    for i = 1 to n do
-      main_loop i
-    done
+      for i = 1 to n do
+	main_loop i
+      done
   else
-    begin
+    (
       let i = ref (1) in
       while true do
 	main_loop !i;
 	i := !i + 1;
       done
-    end
+    );;
+  (* close_in fifo_in; *)
+  (* close_out fifo_out; *)
