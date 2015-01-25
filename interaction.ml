@@ -11,6 +11,13 @@ let stringint_of_bool b =
   if b then "1"
   else "0"
 
+let stringint_of_boolarray barray = 
+  let rec aux arg = match arg with
+    | [] -> ""
+    | b :: bl -> (stringint_of_bool b) ^ aux bl
+  in
+  aux (Array.to_list barray)
+
 let int_of_bool b =
   if b then 1
   else 0
@@ -56,6 +63,16 @@ let rec string_of_value value = match value with
   | VBitArray ar -> 
      Array.fold_left (fun string bool -> string ^ (stringint_of_bool bool)) "" ar
 
+let rec bin_of_int i =
+  let high_byte = i lsr 1 in
+  let low_byte = ( i mod 2) in
+
+  if high_byte > 0 then
+    low_byte+10*(bin_of_int high_byte)
+  else
+    low_byte
+      
+  
 let ask_value s n =
   let message = (
     if n = 1 then
