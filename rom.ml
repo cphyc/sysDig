@@ -3,6 +3,7 @@ let read_file filename =
     let ic = open_in filename in
     let buf = Lexing.from_channel ic in
     Rom_lexer.token buf;
+    close_in ic;
   with
   | Sys_error _ -> ()
   | Rom_lexer.Eof -> ()
