@@ -5,6 +5,7 @@
   exception Eof
 	      
   let make_rom () =
+    print_string "Creating rom array of size "; print_int (!addr_size); print_newline ();
     rom := Array.make (1 lsl !addr_size) (Array.make 1 false)
 			   
   let save address value =
@@ -45,9 +46,10 @@ rule token = parse
   { (* Get the address as an int *)
     let address_as_int = int_of_string ("0b"^address) in
     (* Get the value as an array of bool *)
-    let value_as_bool_array = Interaction.boolarray_of_string value !word_size in
+    let vaba = Interaction.boolarray_of_string value !word_size in
+    let vaba_rev = Array.of_list (List.rev (Array.to_list vaba)) in   
     (* Add it *)
-    save (address_as_int) (value_as_bool_array);
+    save (address_as_int) (vaba_rev);
 
     token lexbuf
   }

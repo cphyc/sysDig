@@ -71,8 +71,9 @@ let rec boolarray_of_int int size =
    
   
 let int_of_boolarray bool_ar =
+  let bool_ar_rev = Array.of_list (List.rev (Array.to_list bool_ar)) in
   Array.fold_left (fun computed value ->
-		   (int_of_bool value) + 2*computed ) 0 bool_ar
+		   (int_of_bool value) + 2*computed ) 0 bool_ar_rev
 
 let int_of_val value = match value with
   | VBit b -> int_of_bool b
@@ -127,8 +128,8 @@ let ask_value s n =
 
 let print_value v = match v with
   | VBit b -> stringint_of_bool b
-  | VBitArray ar ->
-     Array.fold_left (fun s v -> s^(stringint_of_bool v)) "" ar
+  | VBitArray ar -> let ar_rev = Array.of_list (List.rev (Array.to_list ar)) in 
+     Array.fold_left (fun s v -> s^(stringint_of_bool v)) "" ar_rev
 		     
 let dump table =
   Hashtbl.iter (fun key value -> print_endline (key^":\t"^(print_value value))) table 

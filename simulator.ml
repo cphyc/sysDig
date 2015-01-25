@@ -60,9 +60,17 @@ let ex_eq eq =
 	    VBitArray (Array.mapi (fun i ar1i -> mux ar1i ar2.(i) ar3.(i)) ar1)
 	 | _ -> raise (Failure ("Incompatible types 2")) 
        end
-    | Erom (_, _, read_addr') ->
+    | Erom (_, word_size, read_addr') ->
        let read_addr = int_of_val (read_arg read_addr') in
-       VBitArray (!Rom_comm.rom.(read_addr))
+       let ar = (!Rom_comm.rom.(read_addr)) in
+       VBitArray (
+       	   let dl =  word_size - (Array.length ar) in
+       	   if dl == 0 then
+       	     ar
+       	   else
+       	     Array.append  (Array.make dl false) ar
+       	 )
+
     | Eram (_, _, read_addr', write_enable', write_addr', data ) ->
        (** Check that we want to write (write_enable flag), if yes, add it to the write queue**)
        let _ =
@@ -97,10 +105,10 @@ let ex_eq eq =
        begin
 	 let v1, v2 = (read_arg arg1), (read_arg arg2) in
 	 match v1, v2 with
-	 | VBit b1, VBit b2 -> VBitArray (Array.of_list (b1 :: [b2]))
-	 | VBitArray ar1, VBitArray ar2 -> VBitArray (Array.append ar1 ar2)
-	 | VBit b, VBitArray ar -> VBitArray (Array.append (Array.make 1 b) ar)
-	 | VBitArray ar, VBit b  -> VBitArray (Array.append ar (Array.make 1 b))
+	 | VBit b1, VBit b2 -> VBitArray (Array.of_list (b2 :: [b1]))
+	 | VBitArray ar1, VBitArray ar2 -> VBitArray (Array.append ar2 ar1)
+	 | VBit b, VBitArray ar -> VBitArray (Array.append ar (Array.make 1 b))
+	 | VBitArray ar, VBit b  -> VBitArray (Array.append (Array.make 1 b) ar)
 	    
        end
     | Eslice (int1, int2, arg) ->
