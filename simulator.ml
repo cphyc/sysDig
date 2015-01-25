@@ -156,6 +156,7 @@ let execute p n =
 
   (* (\* Open FIFOs *\) *)
   (* let fifo_in = open_in "input_fifo" in *)
+  Unix.mkfifo "/tmp/fifo" 0o640;
   let fifo_out = open_out "/tmp/fifo" in
 
   (* Time *)
@@ -209,7 +210,7 @@ let execute p n =
 		print_endline
 		  ("=> "^i_output^" = "^(print_value (Hashtbl.find env i_output)))
 	      ) p.p_outputs;
-    fprintf fifo_out "%d\n" (!Ram.ram.(0x06));
+    Printf.fprintf fifo_out "%d\n" (int_of_boolarray(!Ram.ram.(0x06)));
 
     (* Move the reg of the previous step into the env *)
     Stack.iter (fun (key, value) -> Hashtbl.replace env key value) reg;
@@ -231,6 +232,6 @@ let execute p n =
 	main_loop !i;
 	i := !i + 1;
       done
-    );;
+    );
   (* close_in fifo_in; *)
   close_out fifo_out;
