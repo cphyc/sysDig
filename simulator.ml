@@ -1,26 +1,26 @@
 open Interaction
 open Netlist_ast
-open Scheduler 
+open Scheduler
 
 let env = Hashtbl.create 73;;
 let reg = Stack.create ();;
 Unix.mkfifo "input_fifo";;
 Unix.mkfifo "output_fifo";;
-  
+
 let read_arg arg = match arg with
   | Avar i -> Hashtbl.find env i
   | Aconst vbit -> vbit
 
-let binop op a b = match op with 
+let binop op a b = match op with
   | Or -> a || b
   | And -> a && b
   | Xor -> (a && not(b)) || (not(a) && b)
   | Nand -> not(a && b)
 
 
-let ex_eq eq = 
+let ex_eq eq =
   let ident, expression = eq in
-  let ex_exp exp = 
+  let ex_exp exp =
     match exp with
     | Earg arg -> read_arg arg
     | Ereg i ->  (* do reg[ident] <- env[i] *)
@@ -30,8 +30,8 @@ let ex_eq eq =
        (* Hashtbl.replace reg ident (env_i); *)
        (* return the current value of the ident *)
        env_ident
-    | Enot arg -> 
-       begin 
+    | Enot arg ->
+       begin
 	 match read_arg arg with
 	 | VBit b -> VBit (not(b))
 	 | VBitArray ar -> VBitArray (Array.map not ar)
@@ -41,12 +41,12 @@ let ex_eq eq =
 	 let v1, v2 = (read_arg arg1), (read_arg arg2) in
 	 match v1, v2 with
 	 | VBit b1, VBit b2 -> VBit (binop op b1 b2)
-	 | VBitArray ar1, VBitArray ar2 
+	 | VBitArray ar1, VBitArray ar2
 	      when (Array.length ar1) = (Array.length ar2) ->
 	    VBitArray (Array.mapi (fun i _ -> binop op ar1.(i) ar2.(i)) ar1)
 	 | _ -> raise (Failure ("Incompatible types 1"))
-       end				  
-    | Emux (s, a, b) -> 
+       end
+    | Emux (s, a, b) ->
        begin
 	 let mux a b c =
 	   (a && b) || (not(a) && c)
@@ -56,9 +56,9 @@ let ex_eq eq =
 	 let vb = read_arg b in
 	 match vs, va, vb with
 	 | VBit b1, VBit b2, VBit b3 -> VBit (mux b1 b2 b3)
-	 | VBitArray ar1, VBitArray ar2, VBitArray ar3 -> 
+	 | VBitArray ar1, VBitArray ar2, VBitArray ar3 ->
 	    VBitArray (Array.mapi (fun i ar1i -> mux ar1i ar2.(i) ar3.(i)) ar1)
-	 | _ -> raise (Failure ("Incompatible types 2")) 
+	 | _ -> raise (Failure ("Incompatible types 2"))
        end
     | Erom (_, word_size, read_addr') ->
        let read_addr = int_of_val (read_arg read_addr') in
@@ -81,17 +81,17 @@ let ex_eq eq =
 	      | VBit _ -> raise (Failure "Expecting VBitArray")
 	      | VBitArray  ar ->  ar
 	    in
-	    
+
 	    (* Convert the write_addr' arg into an int *)
 	    let write_addr = int_of_val (read_arg write_addr') in
-	    
+
 	    (* Add it to the queue *)
 	    Ram.push write_addr data_as_array
-							
+
 	 | VBit false -> (* Nothing to do *) ()
 	 | _ -> raise (Failure "Expecting only one bool")
        in
-       
+
        (** Retrieve the return value **)
        (* Convert the read_addr' arg into an int *)
        let read_addr = int_of_val (read_arg read_addr') in
@@ -109,7 +109,7 @@ let ex_eq eq =
 	 | VBitArray ar1, VBitArray ar2 -> VBitArray (Array.append ar2 ar1)
 	 | VBit b, VBitArray ar -> VBitArray (Array.append ar (Array.make 1 b))
 	 | VBitArray ar, VBit b  -> VBitArray (Array.append (Array.make 1 b) ar)
-	    
+
        end
     | Eslice (int1, int2, arg) ->
        begin
@@ -124,7 +124,7 @@ let ex_eq eq =
 	      | VBitArray ar ->
 		 VBitArray (Array.sub ar int1 (int2-int1+1))
 	    end
-       end			    
+       end
     | Eselect (int, arg) ->
        begin
 	 match arg with
@@ -136,7 +136,7 @@ let ex_eq eq =
 	      | VBit b -> VBit b
 	      | VBitArray ar -> VBit ar.(int)
 	    end
-       end			    
+       end
   in
   let value = ex_exp expression in
   (* TODO: optimize here to avoid setting ident to its previous value in case
@@ -145,7 +145,7 @@ let ex_eq eq =
 
 let execute p n =
   (* Add the variables *)
-  Env.iter (fun ident tbit -> 
+  Env.iter (fun ident tbit ->
 	    let vbit = match tbit with
 	      | TBit -> VBit false
 	      | TBitArray l -> VBitArray (Array.make l false)
@@ -156,8 +156,8 @@ let execute p n =
 
   (* (\* Open FIFOs *\) *)
   (* let fifo_in = open_in "input_fifo" in *)
-  (* let fifo_out = open_out "output_fifo" in *)
-  
+  let fifo_out = open_out "/tmp/fifo" in
+
   (* Time *)
 
   let init_t = Unix.localtime (Unix.time ()) in
@@ -173,7 +173,7 @@ let execute p n =
   !Ram.ram.(0x04) <- rev (boolarray_of_int init_hour 8) ;
 
   let t = ref (int_of_float (Unix.time ()))in
-  
+
   (* Executor of the program *)
   let main_loop i =
     (* Step number *)
@@ -190,14 +190,14 @@ let execute p n =
 	0
     in
     t := new_t;
-    
+
     (* Push it on position 2 of Ram *)
     Ram.push 0x05 (boolarray_of_int tic 8);
-    
+
     (* Fill the input variables *)
     List.iter ( fun ident ->
-		let n = match (Env.find ident p.p_vars) with 
-		  | TBit -> 1 | TBitArray n -> n 
+		let n = match (Env.find ident p.p_vars) with
+		  | TBit -> 1 | TBitArray n -> n
 		in
 		let v = ask_value ident n in
 		Hashtbl.replace env ident v
@@ -209,12 +209,13 @@ let execute p n =
 		print_endline
 		  ("=> "^i_output^" = "^(print_value (Hashtbl.find env i_output)))
 	      ) p.p_outputs;
+    fprintf fifo_out "%d\n" (!Ram.ram.(0x06));
 
     (* Move the reg of the previous step into the env *)
     Stack.iter (fun (key, value) -> Hashtbl.replace env key value) reg;
     (* Delete the stack *)
     Stack.clear reg;
-    
+
     (* Process the ram queue *)
     Ram.process_queue ();
 
@@ -232,4 +233,4 @@ let execute p n =
       done
     );;
   (* close_in fifo_in; *)
-  (* close_out fifo_out; *)
+  close_out fifo_out;
