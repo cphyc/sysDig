@@ -171,10 +171,14 @@ let execute p n =
     let new_t = int_of_float (Unix.time ()) in
     let tic =
       if new_t - !t >= 1 then
-	1
+	(
+	  print_endline "Tic!";
+	  1
+	)
       else
 	0
     in
+    t := new_t;
     
     (* Push it on position 2 of Ram *)
     Ram.push 0x05 (boolarray_of_int tic 8);
