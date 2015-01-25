@@ -165,9 +165,12 @@ let execute p n =
   let init_min = init_t.tm_min in
   let init_sec = init_t.tm_sec in
 
-  !Ram.ram.(0x02) <- boolarray_of_int init_sec 8;
-  !Ram.ram.(0x03) <- boolarray_of_int init_min 8 ;
-  !Ram.ram.(0x04) <- boolarray_of_int init_hour 8 ;
+  let rev array =
+    Array.of_list (List.rev (Array.to_list array))
+  in
+  !Ram.ram.(0x02) <- rev (boolarray_of_int init_sec 8);
+  !Ram.ram.(0x03) <- rev (boolarray_of_int init_min 8) ;
+  !Ram.ram.(0x04) <- rev (boolarray_of_int init_hour 8) ;
 
   let t = ref (int_of_float (Unix.time ()))in
   
