@@ -38,7 +38,7 @@ let bool_of_int i =
   match aux i with
   | [] -> Format.eprintf "Empty list@."; raise Parsing.Parse_error
   | b -> Array.of_list b
-			  
+
 let boolarray_of_string str size =
   let i = int_of_string str in
   let arr = bool_of_int i in
@@ -49,7 +49,27 @@ let boolarray_of_string str size =
     Array.append (Array.make (size-l) false) arr
   else
     Array.sub arr 0 size
-		   
+
+let rec boolarray_of_int int size =
+  let rec aux i = 
+    let high_byte = i lsr 1 in
+    let low_byte = (i mod 2) == 1 in
+    
+    if high_byte > 0 then
+      (aux high_byte) @ [low_byte]
+    else
+      [low_byte]
+  in
+  let barray = aux int in
+  let rec aux2 barray =
+    if List.length barray == size then
+      barray
+    else
+      aux2 ([false] @ barray)
+  in
+  Array.of_list (aux2 barray)
+   
+  
 let int_of_boolarray bool_ar =
   Array.fold_left (fun computed value ->
 		   (int_of_bool value) + 2*computed ) 0 bool_ar
