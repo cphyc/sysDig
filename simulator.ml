@@ -184,7 +184,7 @@ let execute p n =
       if new_t - !t >= 1 then
 	(
 	  print_endline "Tic!";
-	  1
+	  new_t - !t
 	)
       else
 	0
@@ -192,7 +192,10 @@ let execute p n =
     t := new_t;
     
     (* Push it on position 2 of Ram *)
-    Ram.push 0x05 (boolarray_of_int tic 8);
+    (* Get tic *)
+    let current_tic = (int_of_boolarray (!Ram.ram.(0x05)))
+		      + tic in
+    Ram.push 0x05 (rev (boolarray_of_int current_tic 8));
     
     (* Fill the input variables *)
     List.iter ( fun ident ->
