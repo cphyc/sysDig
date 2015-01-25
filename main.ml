@@ -7,7 +7,7 @@ let compile filename =
     let out_name = (Filename.chop_suffix filename ".net") ^ "_sch.net" in
     let p =
       (if not (Sys.file_exists out_name) then(
-	 print_endline "Rescheduling";
+	 print_endline "Scheduling";
 	 let out = open_out out_name in
 	     
 	 (* Schedule the program *)
