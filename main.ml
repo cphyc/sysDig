@@ -17,7 +17,7 @@ let compile filename =
 	 p
        )
        else
-	 p_unscheduled
+	 Netlist.read_file out_name
       )
     in
     
