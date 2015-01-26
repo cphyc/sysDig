@@ -84,7 +84,8 @@ let ex_eq eq =
 
 	    (* Convert the write_addr' arg into an int *)
 	    let write_addr = int_of_val (read_arg write_addr') in
-
+	    Printf.printf "WA : %d\n" write_addr;
+	    Printf.printf "%s\n" (string_of_value (read_arg data));
 	    (* Add it to the queue *)
 	    Ram.push write_addr data_as_array
 
@@ -156,8 +157,8 @@ let execute p n =
 
   (* (\* Open FIFOs *\) *)
   (* let fifo_in = open_in "input_fifo" in *)
-  Unix.mkfifo "/tmp/fifo" 0o640;
-  let fifo_out = open_out "/tmp/fifo" in
+  (* Unix.mkfifo "/tmp/fifo" 0o640; *)
+  (* let fifo_out = open_out "/tmp/fifo" in *)
 
   (* Time *)
 
@@ -179,24 +180,6 @@ let execute p n =
   let main_loop i =
     (* Step number *)
     print_endline ("Step " ^(string_of_int i));
-
-    let new_t = int_of_float (Unix.time ()) in
-    let tic =
-      if new_t - !t >= 1 then
-	(
-	  print_endline "Tic!";
-	  new_t - !t
-	)
-      else
-	0
-    in
-    t := new_t;
-    
-    (* Push it on position 2 of Ram *)
-    (* Get tic *)
-    let current_tic = (int_of_boolarray (!Ram.ram.(0x05)))
-		      + tic in
-    Ram.push 0x05 (rev (boolarray_of_int current_tic 8));
     
     (* Fill the input variables *)
     List.iter ( fun ident ->
@@ -213,7 +196,6 @@ let execute p n =
 		print_endline
 		  ("=> "^i_output^" = "^(print_value (Hashtbl.find env i_output)))
 	      ) p.p_outputs;
-    Printf.fprintf fifo_out "%d\n" (int_of_boolarray(!Ram.ram.(0x06)));
 
     (* Move the reg of the previous step into the env *)
     Stack.iter (fun (key, value) -> Hashtbl.replace env key value) reg;
@@ -222,6 +204,26 @@ let execute p n =
 
     (* Process the ram queue *)
     Ram.process_queue ();
+
+    let new_t = int_of_float (Unix.time ()) in
+    let tic =
+      if new_t - !t >= 1 then
+	(
+	  print_endline "TIC!";
+	  !Ram.ram.(0x05) <- (rev (boolarray_of_int (new_t - !t) 8));
+	  new_t - !t
+	)
+      else
+	0
+    in
+    t := new_t;
+    
+    (* Push it on position 2 of Ram *)
+    (* Get tic *)
+    (* let current_tic = (int_of_boolarray (!Ram.ram.(0x05))) *)
+    (* 		      + tic in *)
+    (* Printf.printf "Tic value: %d\n" (int_of_boolarray !Ram.ram.(0x05)); *)
+
 
   in
   if n >= 0 then
@@ -237,4 +239,4 @@ let execute p n =
       done
     );
   (* close_in fifo_in; *)
-  close_out fifo_out;
+  (* close_out fifo_out; *)

@@ -33,7 +33,9 @@ let push write_addr data =
   Stack.push (write_addr, data) ram_stack
 				       
 let process_queue () =
-  Stack.iter (fun (write_addr, data) -> 
+  let rev array = Array.of_list (List.rev (Array.to_list array)) in
+  Stack.iter (fun (write_addr, data) ->
+	      Printf.printf "Wrote %s at %d\n" (Interaction.stringint_of_boolarray data) write_addr;
 	      !ram.(write_addr) <- data) ram_stack;
   Stack.clear ram_stack
 	    
