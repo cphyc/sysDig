@@ -7,6 +7,8 @@ let reg = Stack.create ();;
 Unix.mkfifo "input_fifo";;
 Unix.mkfifo "output_fifo";;
 
+let t = ref (int_of_float (Unix.time ()));;
+
 let read_arg arg = match arg with
   | Avar i -> Hashtbl.find env i
   | Aconst vbit -> vbit
@@ -76,18 +78,26 @@ let ex_eq eq =
        let _ =
 	 match read_arg write_enable' with
 	 | VBit true -> (* Only a bool flag, processing *)
+	    (* Convert the write_addr' arg into an int *)
+	    let write_addr = int_of_val (read_arg write_addr') in
 	    (* Unpack data into an array *)
 	    let data_as_array = match read_arg data with
 	      | VBit _ -> raise (Failure "Expecting VBitArray")
 	      | VBitArray  ar ->  ar
 	    in
 
-	    (* Convert the write_addr' arg into an int *)
-	    let write_addr = int_of_val (read_arg write_addr') in
 	    Printf.printf "WA : %d\n" write_addr;
 	    Printf.printf "%s\n" (string_of_value (read_arg data));
 	    (* Add it to the queue *)
-	    Ram.push write_addr data_as_array
+	    (* Ram.push write_addr data_as_array*)
+
+        if write_addr = 0x05 then (
+            print_endline "titi";
+            let new_t = int_of_float (Unix.time ()) in
+            t := new_t;
+            !Ram.ram.(0x05) <- (Array.of_list (List.rev (Array.to_list (boolarray_of_int (0) 8)))); (* Dirty hack, reset
+        the tic on write*)
+        );
 
 	 | VBit false -> (* Nothing to do *) ()
 	 | _ -> raise (Failure "Expecting only one bool")
@@ -174,17 +184,17 @@ let execute p n =
   !Ram.ram.(0x03) <- rev (boolarray_of_int init_min 8) ;
   !Ram.ram.(0x04) <- rev (boolarray_of_int init_hour 8) ;
 
-  let t = ref (int_of_float (Unix.time ()))in
 
   (* Executor of the program *)
   let main_loop i =
     (* Step number *)
     print_endline ("Step " ^(string_of_int i));
-    
+    Printf.printf "caca : %d\n" (int_of_boolarray (!Ram.ram.(0x05)));
+
     (* Fill the input variables *)
     List.iter ( fun ident ->
-		let n = match (Env.find ident p.p_vars) with 
-		  | TBit -> 1 | TBitArray n -> n 
+		let n = match (Env.find ident p.p_vars) with
+		  | TBit -> 1 | TBitArray n -> n
 		in
 		let v = ask_value ident n in
 		Hashtbl.replace env ident v
@@ -206,18 +216,9 @@ let execute p n =
     Ram.process_queue ();
 
     let new_t = int_of_float (Unix.time ()) in
-    let tic =
-      if new_t - !t >= 1 then
-	(
-	  print_endline "TIC!";
-	  !Ram.ram.(0x05) <- (rev (boolarray_of_int (new_t - !t) 8));
-	  new_t - !t
-	)
-      else
-	0
-    in
-    t := new_t;
-    
+    !Ram.ram.(0x05) <- (rev (boolarray_of_int (new_t - !t) 8));
+    (*t := new_t;*)
+
     (* Push it on position 2 of Ram *)
     (* Get tic *)
     (* let current_tic = (int_of_boolarray (!Ram.ram.(0x05))) *)
